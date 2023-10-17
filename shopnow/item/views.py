@@ -2,9 +2,26 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
 
 from .forms import NewItemForm, EditItemForm
-from .models import Item
+from .models import Category, Item
 
-# Create your views here.
+def items(request):
+    query = request.GET.get('query', '')
+    Category_id = request.GET.get('Category', 0)
+    Categories = Category.objects.all()
+    items = Item.objects.filter(is_sold=False)
+
+    if Category_id:
+        items = items.filter(Category_id=Category_id)
+
+    if query:
+        items = items.filter(name__icontains=query)
+
+    return render(request, 'item/items.html', {
+        'items' : items,
+        'query' : query,
+        'Categories': Categories,
+        'Category_id' : int(Category_id)
+    })
 
 def detail(request, pk):
     item = get_object_or_404(Item, pk=pk)
@@ -26,10 +43,8 @@ def new(request):
             item.save()
 
             return redirect('item:detail', pk=item.id)
-        else:
-            form = NewItemForm()
-
-   # form = NewItemForm()
+    else:
+        form = NewItemForm()
 
     return render(request, 'item/form.html', {
         'form': form,
